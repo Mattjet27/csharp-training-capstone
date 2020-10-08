@@ -12,6 +12,7 @@ namespace L2CapstoneProject
         NIRfsg rfsg;
         RFmxInstrMX instr;
         public PhaseAmplitudeOffsetList offsetList = new PhaseAmplitudeOffsetList();
+        private SimulatedBeamformer beamformer;
 
         public frmBeamformerPavtController()
         {
@@ -84,14 +85,52 @@ namespace L2CapstoneProject
             CloseInstruments();
         }
 
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            StartGeneration();
+        }
+
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            AbortGeneration();
+        }
+
         #endregion
         #region Program Functions
+        private void StartGeneration()
+        {
+            double frequency, power;
+            try
+            {
+                // Initialize the NIRfsg session
+                rfsg = new NIRfsg(rfsgNameComboBox.Text, true, false);
+                // Subscribe to Rfsg warnings
+                rfsg.DriverOperation.Warning += new EventHandler<RfsgWarningEventArgs>(DriverOperation_Warning);
+
+                // Read in all the control values 
+                frequency = (double)frequencyNumeric.Value;
+                power = (double)powerLevelNumeric.Value;
+
+                // Initialize beamformer
+                beamformer = new SimulatedBeamformer(rfsg, frequency, power);
+                // Connect and iniate beamformer
+                beamformer.Connect();
+                // Configure beamformer phase and ammplitude offset values
+                foreach (PhaseAmplitudeOffset offset in offsetList)
+                    beamformer.WriteOffset(offset);
+            }
+            catch (Exception ex)
+            {
+                ShowError("UpdateGeneration()", ex);
+            }
+        }
         private void AbortGeneration()
         {
             SetButtonState(false);
 
             if (rfsg?.IsDisposed == false)
             {
+                beamformer.Disconnect();
                 rfsg.Abort();
             }
         }
@@ -115,6 +154,11 @@ namespace L2CapstoneProject
         void SetStatus(string statusMessage)
         {
             errorTextBox.Text = statusMessage;
+        }
+        void DriverOperation_Warning(object sender, RfsgWarningEventArgs e)
+        {
+            // Display the rfsg warning
+            SetStatus(e.Message);
         }
         #endregion
         #region Offset Functions
@@ -186,5 +230,7 @@ namespace L2CapstoneProject
         }
 
         #endregion
+
+
     }
 }

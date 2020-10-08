@@ -5,30 +5,49 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NationalInstruments.ModularInstruments.NIRfsg;
+using System.Reflection;
 //using NationalInstruments.ModularInstruments.NIDCPower;
 //using NationalInstruments.ModularInstruments.NIDigital;
 
 namespace L2CapstoneProject
 {
-    class SimulatedBeamformer : BeamformerBase
+    public class SimulatedBeamformer : BeamformerBase
     {
         private readonly NIRfsg _rfsg = null;
         //private readonly NIDCPower _dcpwr = null;
         //private readonly NIDigital _digital = null;
+        public double? Frequency { get; set; } = null;
+        public double? Power { get; set; } = null; 
 
-        public SimulatedBeamformer(NIRfsg rfsgHandle/*,NIDCPower dcpowerHandle, NIDigital digialHandle*/)
+        public SimulatedBeamformer(NIRfsg rfsgHandle)
         {
             _rfsg = rfsgHandle;
-            //_dcpwr = dcpowerHandle;
-            //_digital = digialHandle;
         }
-        
+
+        public SimulatedBeamformer(NIRfsg rfsgHandle, double frequency, double power)
+        {
+            _rfsg = rfsgHandle;
+            Frequency = frequency;
+            Power = power;
+        }
+
         public override void Connect()
         {
             // Power on DUT
             // Write inital DUT registers to configure it correctly.
+            if (Frequency != null && Power != null)
+            {
+                // Configure the instrument 
+                _rfsg.RF.Configure((double)Frequency, (double)Power);
+                // Initiate Generation 
+                _rfsg.Initiate();
+                //throw new NotImplementedException();
+            }
+            else
+            {
+                throw new NullReferenceException();
+            }
 
-            throw new NotImplementedException();
         }
 
         public override void Disconnect()
