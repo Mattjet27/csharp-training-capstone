@@ -111,11 +111,17 @@ namespace L2CapstoneProject
                 frequency = (double)frequencyNumeric.Value;
                 power = (double)powerLevelNumeric.Value;
 
+                // Configure the RFSG instrument 
+                rfsg.RF.Configure(frequency, power);
+                // Initiate Generation 
+                rfsg.Initiate();
+
                 // Initialize beamformer
-                beamformer = new SimulatedBeamformer(rfsg, frequency, power);
+                beamformer = new SimulatedBeamformer(rfsg);
                 // Connect and iniate beamformer
                 beamformer.Connect();
-                // Configure beamformer phase and ammplitude offset values
+
+                // Configure beamformer's phase and amplitude offset values
                 foreach (PhaseAmplitudeOffset offset in offsetList)
                     beamformer.WriteOffset(offset);
             }
@@ -127,10 +133,14 @@ namespace L2CapstoneProject
         private void AbortGeneration()
         {
             SetButtonState(false);
+                      
+            if (beamformer != null)
+            {
+                beamformer.Disconnect();
+            }
 
             if (rfsg?.IsDisposed == false)
             {
-                beamformer.Disconnect();
                 rfsg.Abort();
             }
         }
@@ -138,7 +148,6 @@ namespace L2CapstoneProject
         {
             AbortGeneration();
             rfsg?.Close();
-
             instr?.Close();
         }
         private void SetButtonState(bool started)

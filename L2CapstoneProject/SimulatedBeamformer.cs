@@ -16,53 +16,30 @@ namespace L2CapstoneProject
         private readonly NIRfsg _rfsg = null;
         //private readonly NIDCPower _dcpwr = null;
         //private readonly NIDigital _digital = null;
-        public double? Frequency { get; set; } = null;
-        public double? Power { get; set; } = null; 
 
         public SimulatedBeamformer(NIRfsg rfsgHandle)
         {
             _rfsg = rfsgHandle;
         }
 
-        public SimulatedBeamformer(NIRfsg rfsgHandle, double frequency, double power)
-        {
-            _rfsg = rfsgHandle;
-            Frequency = frequency;
-            Power = power;
-        }
-
         public override void Connect()
         {
             // Power on DUT
             // Write inital DUT registers to configure it correctly.
-            if (Frequency != null && Power != null)
-            {
-                // Configure the instrument 
-                _rfsg.RF.Configure((double)Frequency, (double)Power);
-                // Initiate Generation 
-                _rfsg.Initiate();
-                //throw new NotImplementedException();
-            }
-            else
-            {
-                throw new NullReferenceException();
-            }
+            //throw new NotImplementedException();
 
         }
 
         public override void Disconnect()
         {
-            // Write any register values necessciary to power down DUT safely.
-            
+            // Write any register values necessciary to power down DUT safely.            
             // Power down the DUT.
-
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public override void WriteOffset(PhaseAmplitudeOffset offset)
         {
             // Write any register(s) necessiary to configure the provided Phase and Offset values.
-
             throw new NotImplementedException();
         }
 
