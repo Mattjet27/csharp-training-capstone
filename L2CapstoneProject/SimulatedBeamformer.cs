@@ -40,11 +40,7 @@ namespace L2CapstoneProject
         public override void WriteOffset(PhaseAmplitudeOffset offset)
         {
             // Write any register(s) necessiary to configure the provided Phase and Offset values.
-<<<<<<< HEAD
             //throw new NotImplementedException();
-=======
-            throw new NotImplementedException();
->>>>>>> 6782440100684fa443c73c0d79541936533aa503
         }
 
         /*public override void InitiateSequence()

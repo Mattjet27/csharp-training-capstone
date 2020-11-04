@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using NationalInstruments.ModularInstruments.NIRfsg;
 using NationalInstruments.RFmx.InstrMX;
 using NationalInstruments.ModularInstruments.SystemServices.DeviceServices;
+using System.Collections.Generic;
 
 namespace L2CapstoneProject
 {
@@ -11,7 +12,7 @@ namespace L2CapstoneProject
     {
         NIRfsg rfsg;
         RFmxInstrMX instr;
-        public PhaseAmplitudeOffsetList offsetList = new PhaseAmplitudeOffsetList();
+        public List<PhaseAmplitudeOffset> offsetList = new List<PhaseAmplitudeOffset>();
         private SimulatedBeamformer beamformer;
 
         public frmBeamformerPavtController()
@@ -102,6 +103,7 @@ namespace L2CapstoneProject
             double frequency, power;
             try
             {
+                SetButtonState(true);                
                 // Initialize the NIRfsg session
                 rfsg = new NIRfsg(rfsgNameComboBox.Text, true, false);
                 // Subscribe to Rfsg warnings
