@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using NationalInstruments.ModularInstruments.NIRfsg;
 using NationalInstruments.RFmx.InstrMX;
 using NationalInstruments.RFmx.SpecAnMX;
-using NationalInstruments.ModularInstruments.SystemServices.DeviceServices;
 
 namespace L2CapstoneProject
 {
     class PavtMeasurement
-    {
-        NIRfsg rfsg; 
+    { 
         RFmxInstrMX instrSession;
         RFmxSpecAnMX specAn;
         int NumberOfSegments = 1;
@@ -24,37 +18,33 @@ namespace L2CapstoneProject
         }
 
         //config SG and SA
-        public void ConfigureSA(bool isSteppedBeamformer, double cwFrequency, double cwPower, List<PhaseAmplitudeOffset> offsetList)
+        public void ConfigureSA(bool isSteppedBeamformer, double cwFrequency, double cwPower,
+                        decimal measurementLength, decimal measurementOffset, List<PhaseAmplitudeOffset> offsetList, string triggerSource)
         {
             specAn = instrSession.GetSpecAnSignalConfiguration();
             specAn.SelectMeasurements("", RFmxSpecAnMXMeasurementTypes.Pavt, true);
             specAn.ConfigureRF("", cwFrequency, cwPower, 0);
 
-            const int NumberOfSegments = 1;
-            
-            const int segmentStartTimeArraySize = 1;
-            double[] segmentStartTime = new double[segmentStartTimeArraySize]; 
-            double measurementOffset = 0.0; 
-            double measurementLength = 1.0e-3;
-
+            NumberOfSegments = offsetList.Count;           
+            double segmentInterval = 1.0e-3;// should match interval of output waveform
             //configure triggering to line up with beamformer output
-            specAn.ConfigureDigitalEdgeTrigger("", digitalEdgeSource, digitalEdge, triggerDelay, enableTrigger);
+            specAn.ConfigureDigitalEdgeTrigger("", triggerSource, RFmxSpecAnMXDigitalEdgeTriggerEdge.Rising, 0, true);
 
+            specAn.Pavt.Configuration.ConfigureNumberOfSegments("", NumberOfSegments);
             if (isSteppedBeamformer)
             {
                 specAn.Pavt.Configuration.ConfigureMeasurementLocationType("", RFmxSpecAnMXPavtMeasurementLocationType.Trigger);
-                specAn.Pavt.Configuration.ConfigureNumberOfSegments("", NumberOfSegments);
             }
             else
             {
                 specAn.Pavt.Configuration.ConfigureMeasurementLocationType("", RFmxSpecAnMXPavtMeasurementLocationType.Time);
-                specAn.Pavt.Configuration.ConfigureNumberOfSegments("", segmentStartTimeArraySize);
-                specAn.Pavt.Configuration.ConfigureSegmentStartTimeList("", segmentStartTime);
-                
+                specAn.Pavt.Configuration.ConfigureSegmentStartTimeStep("", NumberOfSegments,
+                  0.0, segmentInterval);
+
             }
 
-            specAn.Pavt.Configuration.ConfigureMeasurementBandwidth("", measurementBandwidth);
-            specAn.Pavt.Configuration.ConfigureMeasurementInterval("", measurementOffset, measurementLength);
+            specAn.Pavt.Configuration.ConfigureMeasurementBandwidth("", 10.0e6);
+            specAn.Pavt.Configuration.ConfigureMeasurementInterval("", (double)measurementOffset, (double)measurementLength);
 
         }
 
@@ -67,22 +57,24 @@ namespace L2CapstoneProject
         //wait for meas complete
 
         // get results
-        public void FetchResults()
+        public PhaseAmplitudeOffset[] FetchResults()
         {
             double timeout = 10.0;
+            PhaseAmplitudeOffset[] resultList = new PhaseAmplitudeOffset[NumberOfSegments];
             double[] meanRelativePhase = new double[NumberOfSegments];                          /* (deg) */
             double[] meanRelativeAmplitude = new double[NumberOfSegments];                      /* (dB) */
             double[] meanAbsolutePhase = new double[NumberOfSegments];                          /* (deg) */
             double[] meanAbsoluteAmplitude = new double[NumberOfSegments];                      /* (dBm) */
 
             specAn.Pavt.Results.FetchPhaseAndAmplitudeArray("", timeout, ref meanRelativePhase,
-               ref meanRelativeAmplitude, ref meanAbsolutePhase, ref meanAbsoluteAmplitude);
+                                        ref meanRelativeAmplitude, ref meanAbsolutePhase, ref meanAbsoluteAmplitude);
 
             for (int i = 0; i < NumberOfSegments; i++)
-            {
-                specAn.Pavt.Results.FetchPhaseTrace("", timeout, i, ref phase[i]);
-                specAn.Pavt.Results.FetchAmplitudeTrace("", timeout, i, ref amplitude[i]);
+            {                
+                resultList[i].Amplitude = (decimal)meanRelativeAmplitude[i];
+                resultList[i].Phase = (decimal)meanRelativePhase[i];
             }
+            return resultList;
         }
 
         //cleanup

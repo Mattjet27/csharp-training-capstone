@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using NationalInstruments.ModularInstruments.NIRfsg;
 using NationalInstruments.RFmx.InstrMX;
+using NationalInstruments.RFmx.SpecAnMX;
 using NationalInstruments.ModularInstruments.SystemServices.DeviceServices;
 using System.Collections.Generic;
 
@@ -117,7 +118,8 @@ namespace L2CapstoneProject
 
                 // Configure SA & SG
                 rfsg.RF.Configure(frequency, power);
-                pavt.ConfigureSA(isStepped, frequency, power, offsetList);
+                pavt.ConfigureSA(isStepped, frequency, power, 
+                    measurementLengthNumeric.Value, measurementOffsetNumeric.Value, offsetList, RFmxSpecAnMXConstants.PxiTriggerLine0);//tentative trig source
 
                 // Initiate Generation 
                 rfsg.Initiate();
@@ -133,10 +135,14 @@ namespace L2CapstoneProject
 
                 //init measurement
                 pavt.Initiate();
-                //wait for meas complete
 
-                // get results                
-            
+                // get results      
+                PhaseAmplitudeOffset[] results = pavt.FetchResults();
+                foreach(var item in results)
+                {
+                    lsvResults.Items.Add(item.GetDisplayItem());
+                }
+
             }
             catch (Exception ex)
             {
