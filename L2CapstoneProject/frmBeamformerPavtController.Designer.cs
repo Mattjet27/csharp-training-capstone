@@ -49,6 +49,8 @@
             this.errorTextBox = new System.Windows.Forms.TextBox();
             this.btnStart = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.btnStepped = new System.Windows.Forms.RadioButton();
+            this.btnSequenced = new System.Windows.Forms.RadioButton();
             this.rfsaNameComboBox = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.btnStop = new System.Windows.Forms.Button();
@@ -58,8 +60,6 @@
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.btnSequenced = new System.Windows.Forms.RadioButton();
-            this.btnStepped = new System.Windows.Forms.RadioButton();
             this.configurationGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.measurementLengthNumeric)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.frequencyNumeric)).BeginInit();
@@ -365,6 +365,28 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Phase and Amplitude Offsets";
             // 
+            // btnStepped
+            // 
+            this.btnStepped.AutoSize = true;
+            this.btnStepped.Location = new System.Drawing.Point(205, 255);
+            this.btnStepped.Name = "btnStepped";
+            this.btnStepped.Size = new System.Drawing.Size(163, 21);
+            this.btnStepped.TabIndex = 4;
+            this.btnStepped.Text = "Stepped Beamformer";
+            this.btnStepped.UseVisualStyleBackColor = true;
+            this.btnStepped.CheckedChanged += new System.EventHandler(this.btnStepped_CheckedChanged);
+            // 
+            // btnSequenced
+            // 
+            this.btnSequenced.AutoSize = true;
+            this.btnSequenced.Location = new System.Drawing.Point(17, 255);
+            this.btnSequenced.Name = "btnSequenced";
+            this.btnSequenced.Size = new System.Drawing.Size(182, 21);
+            this.btnSequenced.TabIndex = 4;
+            this.btnSequenced.Text = "Sequenced Beamformer";
+            this.btnSequenced.UseVisualStyleBackColor = true;
+            this.btnSequenced.CheckedChanged += new System.EventHandler(this.btnSequenced_CheckedChanged);
+            // 
             // rfsaNameComboBox
             // 
             this.rfsaNameComboBox.Location = new System.Drawing.Point(229, 39);
@@ -446,28 +468,6 @@
             // 
             this.columnHeader6.Text = "Amplitude (dB)";
             this.columnHeader6.Width = 97;
-            // 
-            // btnSequenced
-            // 
-            this.btnSequenced.AutoSize = true;
-            this.btnSequenced.Location = new System.Drawing.Point(17, 255);
-            this.btnSequenced.Name = "btnSequenced";
-            this.btnSequenced.Size = new System.Drawing.Size(182, 21);
-            this.btnSequenced.TabIndex = 4;
-            this.btnSequenced.TabStop = true;
-            this.btnSequenced.Text = "Sequenced Beamformer";
-            this.btnSequenced.UseVisualStyleBackColor = true;
-            // 
-            // btnStepped
-            // 
-            this.btnStepped.AutoSize = true;
-            this.btnStepped.Location = new System.Drawing.Point(205, 255);
-            this.btnStepped.Name = "btnStepped";
-            this.btnStepped.Size = new System.Drawing.Size(163, 21);
-            this.btnStepped.TabIndex = 4;
-            this.btnStepped.TabStop = true;
-            this.btnStepped.Text = "Stepped Beamformer";
-            this.btnStepped.UseVisualStyleBackColor = true;
             // 
             // frmBeamformerPavtController
             // 

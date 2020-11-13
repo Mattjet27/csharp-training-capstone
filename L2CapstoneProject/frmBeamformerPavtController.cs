@@ -97,6 +97,19 @@ namespace L2CapstoneProject
         {
             AbortGeneration();
         }
+        private void btnSequenced_CheckedChanged(object sender, EventArgs e)
+        {
+            btnSequenced.Checked = true;
+            isStepped = false;
+            btnStepped.Checked = false;
+        }
+
+        private void btnStepped_CheckedChanged(object sender, EventArgs e)
+        {
+            btnStepped.Checked = true;
+            isStepped = true;
+            btnSequenced.Checked = false;
+        }
 
         #endregion
         #region Program Functions
