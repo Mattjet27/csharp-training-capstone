@@ -375,6 +375,7 @@
             this.btnStepped.Text = "Stepped Beamformer";
             this.btnStepped.UseVisualStyleBackColor = true;
             this.btnStepped.CheckedChanged += new System.EventHandler(this.btnStepped_CheckedChanged);
+            this.btnStepped.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnStepped_MouseDown);
             // 
             // btnSequenced
             // 
@@ -386,6 +387,7 @@
             this.btnSequenced.Text = "Sequenced Beamformer";
             this.btnSequenced.UseVisualStyleBackColor = true;
             this.btnSequenced.CheckedChanged += new System.EventHandler(this.btnSequenced_CheckedChanged);
+            this.btnSequenced.MouseDown += new System.Windows.Forms.MouseEventHandler(this.btnSequenced_MouseDown);
             // 
             // rfsaNameComboBox
             // 

@@ -99,16 +99,23 @@ namespace L2CapstoneProject
         }
         private void btnSequenced_CheckedChanged(object sender, EventArgs e)
         {
-            btnSequenced.Checked = true;
             isStepped = false;
             btnStepped.Checked = false;
         }
 
         private void btnStepped_CheckedChanged(object sender, EventArgs e)
         {
-            btnStepped.Checked = true;
             isStepped = true;
             btnSequenced.Checked = false;
+        }
+        private void btnSequenced_MouseDown(object sender, MouseEventArgs e)
+        {
+            btnSequenced.Checked = true;
+        }
+
+        private void btnStepped_MouseDown(object sender, MouseEventArgs e)
+        {
+            btnStepped.Checked = true;
         }
 
         #endregion
@@ -131,8 +138,8 @@ namespace L2CapstoneProject
 
                 // Configure SA & SG
                 rfsg.RF.Configure(frequency, power);
-                pavt.ConfigureSA(isStepped, frequency, power, 
-                    measurementLengthNumeric.Value, measurementOffsetNumeric.Value, offsetList, RFmxSpecAnMXConstants.PxiTriggerLine0);//tentative trig source
+                pavt.ConfigureSA(isStepped, frequency, measurementLengthNumeric.Value, measurementOffsetNumeric.Value,
+                                offsetList, RFmxSpecAnMXConstants.PxiTriggerLine0);//tentative trig source
 
                 // Initiate Generation 
                 rfsg.Initiate();
@@ -151,7 +158,7 @@ namespace L2CapstoneProject
 
                 // get results      
                 PhaseAmplitudeOffset[] results = pavt.FetchResults();
-                foreach(var item in results)
+                foreach (var item in results)
                 {
                     lsvResults.Items.Add(item.GetDisplayItem());
                 }
@@ -167,11 +174,11 @@ namespace L2CapstoneProject
                 CloseInstruments();
             }
         }
-        
+
         private void AbortGeneration()
         {
             SetButtonState(false);
-                      
+
             if (beamformer != null)
             {
                 beamformer.Disconnect();
