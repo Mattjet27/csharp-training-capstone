@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using NationalInstruments.ModularInstruments.NIRfsg;
 using NationalInstruments.RFmx.InstrMX;
+using NationalInstruments.RFmx.SpecAnMX;
 using NationalInstruments.ModularInstruments.SystemServices.DeviceServices;
 using System.Collections.Generic;
 
@@ -14,7 +15,8 @@ namespace L2CapstoneProject
         RFmxInstrMX instr;
         public List<PhaseAmplitudeOffset> offsetList = new List<PhaseAmplitudeOffset>();
         private SimulatedBeamformer beamformer;
-
+        private PavtMeasurement pavt = new PavtMeasurement();
+        private bool isStepped;
         public frmBeamformerPavtController()
         {
             InitializeComponent();
@@ -95,6 +97,26 @@ namespace L2CapstoneProject
         {
             AbortGeneration();
         }
+        private void btnSequenced_CheckedChanged(object sender, EventArgs e)
+        {
+            isStepped = false;
+            btnStepped.Checked = false;
+        }
+
+        private void btnStepped_CheckedChanged(object sender, EventArgs e)
+        {
+            isStepped = true;
+            btnSequenced.Checked = false;
+        }
+        private void btnSequenced_MouseDown(object sender, MouseEventArgs e)
+        {
+            btnSequenced.Checked = true;
+        }
+
+        private void btnStepped_MouseDown(object sender, MouseEventArgs e)
+        {
+            btnStepped.Checked = true;
+        }
 
         #endregion
         #region Program Functions
@@ -103,9 +125,10 @@ namespace L2CapstoneProject
             double frequency, power;
             try
             {
-                SetButtonState(true);                
-                // Initialize the NIRfsg session
+                SetButtonState(true);
+                // Initialize sessions
                 rfsg = new NIRfsg(rfsgNameComboBox.Text, true, false);
+                pavt.InitSession(rfsaNameComboBox.Text);
                 // Subscribe to Rfsg warnings
                 rfsg.DriverOperation.Warning += new EventHandler<RfsgWarningEventArgs>(DriverOperation_Warning);
 
@@ -113,8 +136,11 @@ namespace L2CapstoneProject
                 frequency = (double)frequencyNumeric.Value;
                 power = (double)powerLevelNumeric.Value;
 
-                // Configure the RFSG instrument 
+                // Configure SA & SG
                 rfsg.RF.Configure(frequency, power);
+                pavt.ConfigureSA(isStepped, frequency, measurementLengthNumeric.Value, measurementOffsetNumeric.Value,
+                                offsetList, RFmxSpecAnMXConstants.PxiTriggerLine0);//tentative trig source
+
                 // Initiate Generation 
                 rfsg.Initiate();
 
@@ -126,23 +152,33 @@ namespace L2CapstoneProject
                 // Configure beamformer's phase and amplitude offset values
                 foreach (PhaseAmplitudeOffset offset in offsetList)
                     beamformer.WriteOffset(offset);
-                    MeasureResponse();
+
+                //init measurement
+                pavt.Initiate();
+
+                // get results      
+                PhaseAmplitudeOffset[] results = pavt.FetchResults();
+                foreach (var item in results)
+                {
+                    lsvResults.Items.Add(item.GetDisplayItem());
+                }
 
             }
             catch (Exception ex)
             {
-                ShowError("UpdateGeneration()", ex);
+                ShowError("StartGeneration()", ex);
+            }
+            finally
+            {
+                //cleanup
+                CloseInstruments();
             }
         }
-        
-        private void MeasureResponse()
-        {
-            // Add mesuremnet code here...
-        }
+
         private void AbortGeneration()
         {
             SetButtonState(false);
-                      
+
             if (beamformer != null)
             {
                 beamformer.Disconnect();
@@ -155,9 +191,17 @@ namespace L2CapstoneProject
         }
         private void CloseInstruments()
         {
-            AbortGeneration();
-            rfsg?.Close();
-            instr?.Close();
+            try
+            {
+                AbortGeneration();
+                rfsg?.Close();
+                pavt.CloseSession();
+                instr?.Close();
+            }
+            catch (Exception e)
+            {
+                ShowError("CloseInstruments()", e);
+            }
         }
         private void SetButtonState(bool started)
         {
