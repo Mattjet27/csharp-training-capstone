@@ -52,6 +52,7 @@
     <Compile Include="Beamformer\IBeamformer.cs" />
     <Compile Include="Beamformer\IBeamformerSequenced.cs" />
     <Compile Include="Beamformer\IBeamformerStepped.cs" />
+    <Compile Include="ComplexMath.cs" />
     <Compile Include="frmBeamformerPavtController.cs">
       <SubType>Form</SubType>
     </Compile>
