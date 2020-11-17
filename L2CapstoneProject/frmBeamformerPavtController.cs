@@ -5,6 +5,7 @@ using NationalInstruments.RFmx.InstrMX;
 using NationalInstruments.RFmx.SpecAnMX;
 using NationalInstruments.ModularInstruments.SystemServices.DeviceServices;
 using System.Collections.Generic;
+using L2CapstoneProject.Beamformer;
 
 namespace L2CapstoneProject
 {
@@ -14,13 +15,17 @@ namespace L2CapstoneProject
         NIRfsg rfsg;
         RFmxInstrMX instr;
         public List<PhaseAmplitudeOffset> offsetList = new List<PhaseAmplitudeOffset>();
-        private SimulatedBeamformer beamformer;
+        private bool simulated;
         private PavtMeasurement pavt = new PavtMeasurement();
+        private BeamformerBase beamformer;
         private bool isStepped;
         public frmBeamformerPavtController()
         {
             InitializeComponent();
             LoadDeviceNames();
+            simulated = true; // setting this to true as default
+            isStepped = false; // setting this to false as default
+            btnSequenced.Checked = true; // setting this true false as default
         }
 
         private void LoadDeviceNames()
@@ -144,8 +149,24 @@ namespace L2CapstoneProject
                 // Initiate Generation 
                 rfsg.Initiate();
 
-                // Initialize beamformer
-                beamformer = new SimulatedBeamformer(rfsg);
+                // Check beamformer type
+                BeamformerBase.BeamformerType beamformerType;
+                if (isStepped)
+                    beamformerType = BeamformerBase.BeamformerType.Stepped;
+                else
+                    beamformerType = BeamformerBase.BeamformerType.Sequeneced;
+
+                // Initialize beamformer    
+                if (simulated)
+                {
+                    beamformer = new SimulatedBeamformer(rfsg, beamformerType);
+                }
+                else
+                {
+                    // Prompt user to configure DCPower and Digital insturments for controlling the hardware beamformer.'
+                    throw new NotImplementedException();
+                }
+
                 // Connect and iniate beamformer
                 beamformer.Connect();
 

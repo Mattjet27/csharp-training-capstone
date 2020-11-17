@@ -8,21 +8,35 @@ namespace L2CapstoneProject.Beamformer
 {
     public abstract class BeamformerBase : IBeamformerSequenced, IBeamformerStepped
     {
-        public enum Mode
+        public enum BeamformerType
         {
+            Stepped,
+            Sequeneced,
+        }
+
+        public enum SequeneceMode
+        {
+            None,
             Dynamic,
             Static,
         }
-        public Mode SequeneceMode { get; set; }
+
+        public BeamformerType Type { get; set; }
+        private SequeneceMode Mode { get; set; }
+
+        public virtual void WriteOffset(PhaseAmplitudeOffset offset)
+        {
+            Mode = SequeneceMode.None;
+        }
 
         public virtual void ConfigureSequence(List<PhaseAmplitudeOffset> offsets)
         {
-            SequeneceMode = Mode.Dynamic;
+           Mode = SequeneceMode.Dynamic;
         }
 
         public virtual void ConfigureSequence(string sequence)
         {
-            SequeneceMode = Mode.Static;
+            Mode = SequeneceMode.Static;
         }
 
         public virtual void InitiateSequence()
@@ -34,10 +48,9 @@ namespace L2CapstoneProject.Beamformer
         {
             throw new NotImplementedException();
         }
+
         public abstract void Connect();
 
         public abstract void Disconnect();
-
-        public abstract void WriteOffset(PhaseAmplitudeOffset offset);
     }
 }

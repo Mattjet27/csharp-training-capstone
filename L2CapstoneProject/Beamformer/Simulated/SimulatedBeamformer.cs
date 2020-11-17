@@ -1,46 +1,33 @@
-﻿using L2CapstoneProject.Beamformer;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NationalInstruments.ModularInstruments.NIRfsg;
 using System.Reflection;
-//using NationalInstruments.ModularInstruments.NIDCPower;
-//using NationalInstruments.ModularInstruments.NIDigital;
 
-namespace L2CapstoneProject
+namespace L2CapstoneProject.Beamformer
 {
-    class RFWaveform
-    {
-        public string Name { get; }
-        public decimal Amplitude { get; set; }
-        public decimal Phase { get; set; }
-        public double[] Idata { get; set; }
-        public double[] Qdata { get; set; }
-        public RFWaveform(string name)
-        {
-            Name = name;
-        }
-    }
-
     public class SimulatedBeamformer : BeamformerBase
     {
         private readonly NIRfsg _rfsg = null;
-        //private readonly NIDCPower _dcpwr = null;
-        //private readonly NIDigital _digital = null;
-        double iqRate;
-        RfsgRFPowerLevelType powerLevelType;
-        string script;
-        RfsgMarkerEventExportedOutputTerminal outputTerminal;
+        readonly double iqRate;
+        double cwOutputPower, maxOutputPwr;
         const double ArbSignalBandwidth = 1;
+        string script;
+        readonly RfsgRFPowerLevelType powerLevelType;
+        readonly RfsgMarkerEventExportedOutputTerminal outputTerminal;
         // Create list for storing RF waveforms 
         List<RFWaveform> waveforms = new List<RFWaveform>();
-        double maxOutputPwr;
 
-        public SimulatedBeamformer(NIRfsg rfsgHandle)
+        public SimulatedBeamformer(NIRfsg rfsgHandle, BeamformerType type)
         {
             _rfsg = rfsgHandle;
+            base.Type = type;
+            powerLevelType = RfsgRFPowerLevelType.PeakPower;
+            outputTerminal = RfsgMarkerEventExportedOutputTerminal.Pfi0;
+            iqRate = _rfsg.Arb.IQRate;
+            cwOutputPower = _rfsg.RF.PowerLevel;
         }
 
         public override void Connect()
@@ -103,10 +90,12 @@ namespace L2CapstoneProject
         }
         public override void ConfigureSequence(List<PhaseAmplitudeOffset> offsets)
         {
+            base.ConfigureSequence(offsets);
+            cwOutputPower = _rfsg.RF.PowerLevel;
             // Get the maximum output power required for generating the offsets in the sequence
-            maxOutputPwr = GetMaxOutputPwr(offsets);            
+            maxOutputPwr = GetMaxOutputPwr(offsets, cwOutputPower);            
             // Build rf waveforms
-            waveforms = BuildWaveformList(offsets, maxOutputPwr);
+            waveforms = BuildWaveformList(offsets);
             // Build Script based on Waveforms in list. 
             script = BuildScript(waveforms);
         }
@@ -114,8 +103,13 @@ namespace L2CapstoneProject
         /*
         //public override void ConfigureSequence(string sequence)
         {
-            GenerateIQData(offsets);
-            BuildScript();
+            base.ConfigureSequence(sequence);
+            // Get the maximum output power required for generating the offsets in the sequence
+            maxOutputPwr = GetMaxOutputPwr(sequence);            
+            // Build rf waveforms
+            waveforms = BuildWaveformList(sequence, maxOutputPwr);
+            // Build Script based on Waveforms in list. 
+            script = BuildScript(waveforms);
         }
         */
 
@@ -123,6 +117,7 @@ namespace L2CapstoneProject
         {
             // Fire software scripttrigger to stop sequence. 
             _rfsg.Triggers.ScriptTriggers[0].SendSoftwareEdgeTrigger();
+            // TODO add code to return the RSFG output back to the orignal CW mode?
         }
 
         public override string ToString()
@@ -141,16 +136,16 @@ namespace L2CapstoneProject
         /// being greater than what is currently configured within the driver session.
         /// </returns>
         /// 
-        public double GetMaxOutputPwr(List<PhaseAmplitudeOffset> offsets)
+        public double GetMaxOutputPwr(List<PhaseAmplitudeOffset> offsets, double cwOutputPower)
         {
             // Get the currently configured output power
-            decimal maxOutputPower = (decimal)_rfsg.RF.PowerLevel;
+            double maxOutputPower = cwOutputPower;
             // Find the max amplitude within the set of Amplitudes.
             foreach (PhaseAmplitudeOffset offset in offsets)
             {
-                maxOutputPower = Math.Max(offset.Amplitude, maxOutputPower);
+                maxOutputPower = Math.Max((double)offset.Amplitude, maxOutputPower);
             }
-            return (double)maxOutputPower;
+            return maxOutputPower;
         }
 
         /// <summary>
@@ -170,22 +165,40 @@ namespace L2CapstoneProject
             }
         }
 
-        private Tuple<double[], double[]> GenerateIQData(PhaseAmplitudeOffset offset, double maxOutputPwr, int numberOfSamples=64)
+        private Tuple<double[], double[]> GenerateIQData(PhaseAmplitudeOffset offset, 
+            double cwOutputPower, double maxOutputPwr, int numberOfSamples=64)
         {
             // Create I/Q data value arrays where 1 is the max output power from the set of Offset Amplitudes.
             double[] iData = new double[numberOfSamples];
             double[] qData = new double[numberOfSamples];
-            // Generate I and Q data arrays 
+            ComplexMath.PolarPoint polarPoint = ComplexMath.CartesianToPolar(1.0, 0.0);
+            Tuple<double, double> cartesianPoint = Tuple.Create(1.0, 0.0);
+
+            // Add offsets.
+            if ((cwOutputPower + (double)offset.Amplitude) < maxOutputPwr)
+            {
+                // TODO NEED TO CONSIDER DBm VALUES?
+                polarPoint.Radius = (cwOutputPower + (double)offset.Amplitude) / maxOutputPwr;
+                polarPoint.Angle += (double)offset.Phase;
+                cartesianPoint = ComplexMath.PolarToCartesian(polarPoint.Radius, polarPoint.Angle);
+            }
+            else if ((cwOutputPower + (double)offset.Amplitude) > maxOutputPwr)
+            {
+                // TODO add better exception?
+                throw new Exception($"Max Output Power {maxOutputPwr} was not calculated correctly.");
+            }
+
+            // Generate I and Q data arrays. 
             for (int sampleItr = 0; sampleItr < numberOfSamples; sampleItr++)
             {
-                iData[sampleItr] = 1.0;
-                qData[sampleItr] = 0.0;
+                iData[sampleItr] = cartesianPoint.Item1;
+                qData[sampleItr] = cartesianPoint.Item2;
             }
-            //
+            // Return I Q data arrays as Tuple.
             return Tuple.Create(iData, qData);
         }
 
-        private List<RFWaveform> BuildWaveformList(List<PhaseAmplitudeOffset> offsets, double maxOutputPwr)
+        private List<RFWaveform> BuildWaveformList(List<PhaseAmplitudeOffset> offsets)
         {
             Tuple<double[], double[]> iqData;
             // Create list for storing RF waveforms 
@@ -195,9 +208,9 @@ namespace L2CapstoneProject
             foreach (PhaseAmplitudeOffset offset in offsets)
             {
                 RFWaveform waveform = new RFWaveform($"{offset.Phase}_{offset.Amplitude}"); // waveform name set based on Amplitude & Phase values.  
-                waveform.Amplitude = offset.Amplitude;
-                waveform.Phase = offset.Phase;
-                iqData = GenerateIQData(offset, maxOutputPwr); // Calucalte IQ data arrays. 
+                waveform.AmplitudeOffset = offset.Amplitude;
+                waveform.PhaseOffset = offset.Phase;
+                iqData = GenerateIQData(offset, cwOutputPower, maxOutputPwr); // Calucalte IQ data arrays. 
                 waveform.Idata = iqData.Item1;
                 waveform.Qdata = iqData.Item2;
                 waveformlist.Add(waveform); // Add the new waveform object to the waveforms list.
