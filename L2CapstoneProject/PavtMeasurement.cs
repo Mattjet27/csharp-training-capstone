@@ -46,7 +46,7 @@ namespace L2CapstoneProject
             else
             {
                 specAn.Pavt.Configuration.ConfigureMeasurementLocationType("", RFmxSpecAnMXPavtMeasurementLocationType.Time);
-                specAn.Pavt.Configuration.ConfigureSegmentStartTimeStep("", NumberOfSegments,
+                specAn.Pavt.Configuration.ConfigureMeasurementStartTimeStep("", NumberOfSegments,
                   0.0, segmentInterval);
 
             }
