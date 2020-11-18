@@ -32,5 +32,10 @@ namespace L2CapstoneProject.Beamformer
             double y = angle;
             return Tuple.Create(x,y);
         }
+
+        internal static double DegreesToRadians(double degrees)
+        {
+            return (degrees / 180.0) * Math.PI;
+        }
     }
 }

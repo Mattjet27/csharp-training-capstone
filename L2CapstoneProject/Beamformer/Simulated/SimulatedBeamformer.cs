@@ -25,7 +25,7 @@ namespace L2CapstoneProject.Beamformer
             _rfsg = rfsgHandle;
             base.Type = type;
             powerLevelType = RfsgRFPowerLevelType.PeakPower;
-            outputTerminal = RfsgMarkerEventExportedOutputTerminal.Pfi0;
+            outputTerminal = RfsgMarkerEventExportedOutputTerminal.PxiTriggerLine0;
             iqRate = _rfsg.Arb.IQRate;
             cwOutputPower = _rfsg.RF.PowerLevel;
         }
@@ -165,6 +165,16 @@ namespace L2CapstoneProject.Beamformer
             }
         }
 
+        internal static double CalculateRadius(double cwOutputPower, double maxOutputPwr, double amplitudeOffset)
+        {
+            return (DBmtoVrms(cwOutputPower) + DBmtoVrms(amplitudeOffset)) / DBmtoVrms(maxOutputPwr);
+        }
+
+        private static double DBmtoVrms(double dbmPower)
+        {
+            return Math.Sqrt(50 / 1000) * Math.Pow(10, dbmPower / 20);
+        }
+
         private Tuple<double[], double[]> GenerateIQData(PhaseAmplitudeOffset offset, 
             double cwOutputPower, double maxOutputPwr, int numberOfSamples=64)
         {
@@ -177,9 +187,8 @@ namespace L2CapstoneProject.Beamformer
             // Add offsets.
             if ((cwOutputPower + (double)offset.Amplitude) < maxOutputPwr)
             {
-                // TODO NEED TO CONSIDER DBm VALUES?
-                polarPoint.Radius = (cwOutputPower + (double)offset.Amplitude) / maxOutputPwr;
-                polarPoint.Angle += (double)offset.Phase;
+                polarPoint.Radius = CalculateRadius(cwOutputPower, maxOutputPwr, (double)offset.Amplitude);
+                polarPoint.Angle += ComplexMath.DegreesToRadians((double)offset.Phase);
                 cartesianPoint = ComplexMath.PolarToCartesian(polarPoint.Radius, polarPoint.Angle);
             }
             else if ((cwOutputPower + (double)offset.Amplitude) > maxOutputPwr)
