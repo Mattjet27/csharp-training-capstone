@@ -19,11 +19,10 @@ namespace L2CapstoneProject
         }
 
         //config SG and SA
-        public void ConfigureSA(bool isSteppedBeamformer, double cwFrequency, decimal measurementLength, 
-                                decimal measurementOffset, List<PhaseAmplitudeOffset> offsetList, string triggerSource)
+        public void Configure(bool isSteppedBeamformer, double cwFrequency, double cwPower, decimal measurementLength, 
+                                decimal measurementOffset, List<PhaseAmplitudeOffset> offsetList, string triggerSource, double segmentInterval)
         {
             NumberOfSegments = offsetList.Count;
-            double segmentInterval = 1.0e-3;// should match interval of output waveform
             decimal[] offsets = new decimal[NumberOfSegments];
             for (int i = 0; i < NumberOfSegments; i++)
             {
@@ -33,7 +32,7 @@ namespace L2CapstoneProject
             specAn = instrSession.GetSpecAnSignalConfiguration();
             specAn.SelectMeasurements("", RFmxSpecAnMXMeasurementTypes.Pavt, true);         
 
-            specAn.ConfigureRF("", cwFrequency, (double)offsets.Max(), 0);
+            specAn.ConfigureRF("", cwFrequency, cwPower+(double)offsets.Max(), 0);
 
             //configure triggering to line up with beamformer output
             specAn.ConfigureDigitalEdgeTrigger("", triggerSource, RFmxSpecAnMXDigitalEdgeTriggerEdge.Rising, 0, true);
@@ -47,7 +46,7 @@ namespace L2CapstoneProject
             {
                 specAn.Pavt.Configuration.ConfigureMeasurementLocationType("", RFmxSpecAnMXPavtMeasurementLocationType.Time);
                 specAn.Pavt.Configuration.ConfigureMeasurementStartTimeStep("", NumberOfSegments,
-                  0.0, segmentInterval);
+                  (double)measurementOffset, segmentInterval);
 
             }
 

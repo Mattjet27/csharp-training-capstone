@@ -29,7 +29,7 @@ namespace L2CapstoneProject.Beamformer
             Mode = SequeneceMode.None;
         }
 
-        public virtual void ConfigureSequence(List<PhaseAmplitudeOffset> offsets)
+        public virtual void ConfigureSequence(List<PhaseAmplitudeOffset> offsets, int segmentLength)
         {
            Mode = SequeneceMode.Dynamic;
         }

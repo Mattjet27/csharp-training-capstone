@@ -11,7 +11,7 @@ namespace L2CapstoneProject.Beamformer
         /// <summary>
         /// Configures a sequence based on a list of PhaseAmplitudeOffset values (dynamic)
         /// </summary>
-        void ConfigureSequence(List<PhaseAmplitudeOffset> offsets);
+        void ConfigureSequence(List<PhaseAmplitudeOffset> offsets, int segmentLength);
         /// <summary>
         /// Configures a sequence based on loading a pre-configured sequence (static)
         /// </summary>

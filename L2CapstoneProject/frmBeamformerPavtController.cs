@@ -13,12 +13,13 @@ namespace L2CapstoneProject
     public partial class frmBeamformerPavtController : Form
     {
         NIRfsg rfsg;
-        RFmxInstrMX instr;
         public List<PhaseAmplitudeOffset> offsetList = new List<PhaseAmplitudeOffset>();
         private bool simulated;
         private PavtMeasurement pavt = new PavtMeasurement();
         private BeamformerBase beamformer;
         private bool isStepped;
+        int segmentSamples;
+        double segmentTime;
         public frmBeamformerPavtController()
         {
             InitializeComponent();
@@ -143,11 +144,13 @@ namespace L2CapstoneProject
 
                 // Configure SA & SG
                 rfsg.RF.Configure(frequency, power);
-                pavt.ConfigureSA(isStepped, frequency, measurementLengthNumeric.Value, measurementOffsetNumeric.Value,
-                                offsetList, RFmxSpecAnMXConstants.PxiTriggerLine0);//tentative trig source
 
                 // Initiate Generation 
                 rfsg.Initiate();
+
+                segmentTime = (double)(measurementLengthNumeric.Value + measurementOffsetNumeric.Value) * 10e-6 * 2;
+                pavt.Configure(isStepped, frequency, power, measurementLengthNumeric.Value*(decimal)10e-6, measurementOffsetNumeric.Value * (decimal)10e-6,
+                                offsetList, RFmxSpecAnMXConstants.PxiTriggerLine1, segmentTime);//tentative trig source
 
                 // Check beamformer type
                 BeamformerBase.BeamformerType beamformerType;
@@ -167,15 +170,19 @@ namespace L2CapstoneProject
                     throw new NotImplementedException();
                 }
 
-                // Connect and iniate beamformer
+                // Connect beamformer
                 beamformer.Connect();
 
-                // Configure beamformer's phase and amplitude offset values
-                foreach (PhaseAmplitudeOffset offset in offsetList)
-                    beamformer.WriteOffset(offset);
+                // Configure beamformer's phase and amplitude offset values, as well as segment timing
+                segmentSamples = (int)Math.Round((double)(measurementLengthNumeric.Value + measurementOffsetNumeric.Value)*10e-6* rfsg.Arb.IQRate*2);
+                beamformer.ConfigureSequence(offsetList, segmentSamples);
+
 
                 //init measurement
                 pavt.Initiate();
+
+                //start beamformer
+                beamformer.InitiateSequence();
 
                 // get results      
                 PhaseAmplitudeOffset[] results = pavt.FetchResults();
@@ -202,6 +209,7 @@ namespace L2CapstoneProject
 
             if (beamformer != null)
             {
+                beamformer.AbortSequence();
                 beamformer.Disconnect();
             }
 
@@ -217,7 +225,6 @@ namespace L2CapstoneProject
                 AbortGeneration();
                 rfsg?.Close();
                 pavt.CloseSession();
-                instr?.Close();
             }
             catch (Exception e)
             {
