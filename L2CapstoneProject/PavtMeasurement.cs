@@ -51,7 +51,7 @@ namespace L2CapstoneProject
             }
 
             specAn.Pavt.Configuration.ConfigureMeasurementBandwidth("", 10.0e6);
-            specAn.Pavt.Configuration.ConfigureMeasurementInterval("", (double)measurementOffset, (double)measurementLength);
+            //specAn.Pavt.Configuration.ConfigureMeasurementInterval("", (double)measurementOffset, (double)measurementLength);
 
         }
 
@@ -64,10 +64,10 @@ namespace L2CapstoneProject
         //wait for meas complete
 
         // get results
-        public PhaseAmplitudeOffset[] FetchResults()
+        public List<PhaseAmplitudeOffset> FetchResults()
         {
             double timeout = 10.0;
-            PhaseAmplitudeOffset[] resultList = new PhaseAmplitudeOffset[NumberOfSegments];
+            List<PhaseAmplitudeOffset> resultList = new List<PhaseAmplitudeOffset>(NumberOfSegments);
             double[] meanRelativePhase = new double[NumberOfSegments];                          /* (deg) */
             double[] meanRelativeAmplitude = new double[NumberOfSegments];                      /* (dB) */
             double[] meanAbsolutePhase = new double[NumberOfSegments];                          /* (deg) */
@@ -77,9 +77,8 @@ namespace L2CapstoneProject
                                         ref meanRelativeAmplitude, ref meanAbsolutePhase, ref meanAbsoluteAmplitude);
 
             for (int i = 0; i < NumberOfSegments; i++)
-            {                
-                resultList[i].Amplitude = (decimal)meanRelativeAmplitude[i];
-                resultList[i].Phase = (decimal)meanRelativePhase[i];
+            {
+                resultList.Add(new PhaseAmplitudeOffset((decimal)meanRelativePhase[i], (decimal)meanRelativeAmplitude[i]));
             }
             return resultList;
         }
