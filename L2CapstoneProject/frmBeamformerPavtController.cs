@@ -107,12 +107,14 @@ namespace L2CapstoneProject
         {
             isStepped = false;
             btnStepped.Checked = false;
+            AbortGeneration();
         }
 
         private void btnStepped_CheckedChanged(object sender, EventArgs e)
         {
             isStepped = true;
             btnSequenced.Checked = false;
+            AbortGeneration();
         }
         private void btnSequenced_MouseDown(object sender, MouseEventArgs e)
         {
@@ -130,8 +132,10 @@ namespace L2CapstoneProject
         {
             double frequency, power;
             try
-            {
+            { 
                 SetButtonState(true);
+                lsvResults.Items.Clear();
+                errorTextBox.Text = " ";
                 // Initialize sessions
                 rfsg = new NIRfsg(rfsgNameComboBox.Text, true, false);
                 pavt.InitSession(rfsaNameComboBox.Text);
@@ -174,7 +178,7 @@ namespace L2CapstoneProject
                 beamformer.Connect();
 
                 // Configure beamformer's phase and amplitude offset values, as well as segment timing
-                segmentSamples = (int)Math.Round((double)(measurementLengthNumeric.Value + measurementOffsetNumeric.Value)*10e-6* rfsg.Arb.IQRate*2);
+                segmentSamples = (int)Math.Round(segmentTime * rfsg.Arb.IQRate);
                 beamformer.ConfigureSequence(offsetList, segmentSamples);
 
 
@@ -185,10 +189,10 @@ namespace L2CapstoneProject
                 beamformer.InitiateSequence();
 
                 // get results      
-                PhaseAmplitudeOffset[] results = pavt.FetchResults();
-                foreach (var item in results)
+                List<PhaseAmplitudeOffset> results = pavt.FetchResults();
+                for (int i = 0; i < results.Count; i++)
                 {
-                    lsvResults.Items.Add(item.GetDisplayItem());
+                    lsvResults.Items.Add(results[i].GetDisplayItem(i));
                 }
 
             }
@@ -213,7 +217,7 @@ namespace L2CapstoneProject
                 beamformer.Disconnect();
             }
 
-            if (rfsg?.IsDisposed == false)
+            if (rfsg!= null && !rfsg.IsDisposed)
             {
                 rfsg.Abort();
             }
