@@ -21,9 +21,19 @@ namespace L2CapstoneProject
         /// </summary>
         public decimal Amplitude { get; set; }
 
+        public PhaseAmplitudeOffset()
+        {
+        }
+
+        public PhaseAmplitudeOffset(decimal phase, decimal amplitude)
+        {
+            Phase = phase;
+            Amplitude = amplitude;
+        }
+
         internal string GetDisplayText()
         {
-            return $"{Phase};{Amplitude}";
+            return $";{Phase};{Amplitude}";
         }
 
         /// <summary>
@@ -33,6 +43,15 @@ namespace L2CapstoneProject
         internal ListViewItem GetDisplayItem()
         {
             return new ListViewItem(new string[] {Phase.ToString(), Amplitude.ToString()});
+        }
+
+        /// <summary>
+        /// Gets the phase and amplitude offset values and formats them into a ListViewItem.
+        /// </summary>
+        /// <returns>A ListViewItem formated such that index is the first column element, followed by Phase, then Amplitude.</returns>
+        internal ListViewItem GetDisplayItem(int index)
+        {
+            return new ListViewItem(new string[] { index.ToString(), Phase.ToString(), Amplitude.ToString() });
         }
     }
 }
