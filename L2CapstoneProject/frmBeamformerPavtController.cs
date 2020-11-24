@@ -146,14 +146,15 @@ namespace L2CapstoneProject
                 frequency = (double)frequencyNumeric.Value;
                 power = (double)powerLevelNumeric.Value;
 
-                // Configure SA & SG
+                // Configure SG
                 rfsg.RF.Configure(frequency, power);
 
                 // Initiate Generation 
                 rfsg.Initiate();
 
-                segmentTime = (double)(measurementLengthNumeric.Value + measurementOffsetNumeric.Value) * 10e-6 * 2;
-                pavt.Configure(isStepped, frequency, power, measurementLengthNumeric.Value*(decimal)10e-6, measurementOffsetNumeric.Value * (decimal)10e-6,
+                //Configure measurement
+                segmentTime = (double)(measurementLengthNumeric.Value + measurementOffsetNumeric.Value) * 1e-6 * 2;
+                pavt.Configure(isStepped, frequency, power, measurementLengthNumeric.Value * (decimal)1e-6, measurementOffsetNumeric.Value * (decimal)1e-6,
                                 offsetList, RFmxSpecAnMXConstants.PxiTriggerLine1, segmentTime);//tentative trig source
 
                 // Check beamformer type
@@ -162,7 +163,7 @@ namespace L2CapstoneProject
                     beamformerType = BeamformerBase.BeamformerType.Stepped;
                 else
                     beamformerType = BeamformerBase.BeamformerType.Sequeneced;
-
+                                
                 // Initialize beamformer    
                 if (simulated)
                 {
@@ -177,18 +178,36 @@ namespace L2CapstoneProject
                 // Connect beamformer
                 beamformer.Connect();
 
-                // Configure beamformer's phase and amplitude offset values, as well as segment timing
                 segmentSamples = (int)Math.Round(segmentTime * rfsg.Arb.IQRate);
-                beamformer.ConfigureSequence(offsetList, segmentSamples);
 
 
-                //init measurement
-                pavt.Initiate();
+                if (!isStepped)
+                {
+                    // Configure beamformer's phase and amplitude offset values, as well as segment timing
+                    beamformer.ConfigureSequence(offsetList, segmentSamples);
 
-                //start beamformer
-                beamformer.InitiateSequence();
+                    // Init measurement
+                    pavt.Initiate();
 
-                // get results      
+                    // Start beamformer
+                    beamformer.InitiateSequence();
+                }
+                else
+                {
+                    // Init measurement
+                    pavt.Initiate();
+                    // Write Offsets, one at a time.
+                    foreach (PhaseAmplitudeOffset offset in offsetList)
+                    {                        
+                        beamformer.WriteOffset(offset);
+                        // Wait in SW for measurment to be done.
+                        System.Threading.Thread.Sleep(1000);
+                    }                    
+                }
+
+
+
+                //get results      
                 List<PhaseAmplitudeOffset> results = pavt.FetchResults();
                 for (int i = 0; i < results.Count; i++)
                 {
