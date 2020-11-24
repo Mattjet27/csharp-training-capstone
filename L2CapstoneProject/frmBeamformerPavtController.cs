@@ -128,6 +128,9 @@ namespace L2CapstoneProject
 
         #endregion
         #region Program Functions
+        /// <summary>
+        /// Creates instrument sessions, applies user configurations, communicates with beamformer, and performs PaVT measurements
+        /// </summary>
         private void StartGeneration()
         {
             double frequency, power;
@@ -226,6 +229,9 @@ namespace L2CapstoneProject
             }
         }
 
+        /// <summary>
+        /// Aborts any instrument sessions if running
+        /// </summary>
         private void AbortGeneration()
         {
             SetButtonState(false);
@@ -241,6 +247,10 @@ namespace L2CapstoneProject
                 rfsg.Abort();
             }
         }
+
+        /// <summary>
+        /// Closes any existing instrument sessions
+        /// </summary>
         private void CloseInstruments()
         {
             try
@@ -254,11 +264,19 @@ namespace L2CapstoneProject
                 ShowError("CloseInstruments()", e);
             }
         }
+
+        /// <summary>
+        /// Sets the states of UI start/stop buttons
+        /// </summary>
         private void SetButtonState(bool started)
         {
             btnStart.Enabled = !started;
             btnStop.Enabled = started;
         }
+
+        /// <summary>
+        /// Displays instrument errors in the UI error box
+        /// </summary>
         void ShowError(string functionName, Exception exception)
         {
             AbortGeneration();

@@ -11,16 +11,30 @@ namespace L2CapstoneProject
         RFmxInstrMX instrSession;
         RFmxSpecAnMX specAn;
         int NumberOfSegments = 1;
-        //init
-        // Initialize the NIRfsg session
+
+        /// <summary>
+        /// Initiates RFInstrMX session for acquisition
+        /// </summary>
+        /// <param name="resourceName">SA instrument name</param>
         public void InitSession(string resourceName)
         {
             instrSession = new RFmxInstrMX(resourceName, "");
         }
 
-        //config SG and SA
-        public void Configure(bool isSteppedBeamformer, double cwFrequency, double cwPower, decimal measurementLength, 
-                                decimal measurementOffset, List<PhaseAmplitudeOffset> offsetList, string triggerSource, double segmentInterval)
+        /// <summary>
+        /// Configures SA and PAvT measurement properties based on user inputs
+        /// </summary>
+        /// <param name="isSteppedBeamformer">determines whether measurement will be stepped or sequenced</param>
+        /// <param name="centerFrequency">center frequency (Hz)</param>
+        /// <param name="power">CW power level (dB)</param>
+        /// <param name="measurementLength">measurement length (s)</param>
+        /// <param name="measurementOffset">measurement offset (s)</param>
+        /// <param name="offsetList">list of Phase and Amplitude Offsets determined by user.</param>
+        /// <param name="triggerSource">measurement start trigger source</param>
+        /// <param name="segmentInterval">length of DUT output segments (s)</param>
+        public void Configure(bool isSteppedBeamformer, double centerFrequency, double power, decimal measurementLength, 
+                                decimal measurementOffset, List<PhaseAmplitudeOffset> offsetList, string triggerSource,
+                                double segmentInterval)
         {
             NumberOfSegments = offsetList.Count;
             decimal[] offsets = new decimal[NumberOfSegments];
@@ -33,7 +47,7 @@ namespace L2CapstoneProject
             specAn = instrSession.GetSpecAnSignalConfiguration();
             specAn.SelectMeasurements("", RFmxSpecAnMXMeasurementTypes.Pavt, true);         
 
-            specAn.ConfigureRF("", cwFrequency, cwPower+(double)offsets.Max(), 0);
+            specAn.ConfigureRF("", centerFrequency, power+(double)offsets.Max(), 0);
 
             //configure triggering to line up with beamformer output
             specAn.ConfigureDigitalEdgeTrigger("", triggerSource, RFmxSpecAnMXDigitalEdgeTriggerEdge.Rising, 0, true);
@@ -53,15 +67,19 @@ namespace L2CapstoneProject
             specAn.Pavt.Configuration.ConfigureMeasurementBandwidth("", 10.0e6);
         }
 
-        //init measurement
+        /// <summary>
+        /// Initiates PAvT measurement
+        /// </summary>
         public void Initiate()
         {
             specAn.Initiate("", "");
         }
 
-        //wait for meas complete
-
-        // get results
+        /// <summary>
+        /// Fetches and formats PAvT measurement results for display.
+        /// </summary>
+        /// <returns>List of phase and amplitude measurements corresponding to each segment 
+        /// specified by the user in measurement configuration</returns> 
         public List<PhaseAmplitudeOffset> FetchResults()
         {
             double timeout = 10.0;
@@ -81,7 +99,9 @@ namespace L2CapstoneProject
             return resultList;
         }
 
-        //cleanup
+        /// <summary>
+        /// Closes any existing measurement configurations and instruemtn sessions.S
+        /// </summary>
         public void CloseSession()
         {
             if (specAn != null)
