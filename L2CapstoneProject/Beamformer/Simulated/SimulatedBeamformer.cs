@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using NationalInstruments.ModularInstruments.NIRfsg;
 using System.Reflection;
+using NationalInstruments;
+using System.Drawing;
 
 namespace L2CapstoneProject.Beamformer
 {
@@ -52,6 +54,15 @@ namespace L2CapstoneProject.Beamformer
         {
             // Write any register(s) necessiary to configure the provided Phase and Offset values.
             //throw new NotImplementedException();
+            base.WriteOffset(offset);
+            cwOutputPower = _rfsg.RF.PowerLevel;
+            // Get the maximum output power required for generating the offsets in the sequence
+            maxOutputPwr = GetMaxOutputPwr(offset, cwOutputPower);
+            // Build rf waveforms
+            waveforms = BuildWaveformList(offset, 64);
+            // Build Script based on Waveforms in list. 
+            script = BuildScript(waveforms);
+            InitiateSequence();
         }
 
         public override void InitiateSequence()
@@ -80,10 +91,13 @@ namespace L2CapstoneProject.Beamformer
             // Configure the signal bandwidth 
             _rfsg.Arb.SignalBandwidth = ArbSignalBandwidth;
 
+            _rfsg.Arb.PreFilterGain = -1.5;
+
             // Write the DC arb waveform(s)
             foreach (RFWaveform waveform in waveforms)
             {
                 _rfsg.Arb.WriteWaveform(waveform.Name, waveform.Idata, waveform.Qdata);
+                //_rfsg.Arb.WriteWaveform()
             }
 
             // Write the script 
@@ -154,8 +168,17 @@ namespace L2CapstoneProject.Beamformer
             // Find the max amplitude within the set of Amplitudes.
             foreach (PhaseAmplitudeOffset offset in offsets)
             {
-                maxOutputPower = Math.Max((double)offset.Amplitude, maxOutputPower);
+                maxOutputPower = Math.Max(maxOutputPower+(double)offset.Amplitude, maxOutputPower);
             }
+            return maxOutputPower;
+        }
+
+        public double GetMaxOutputPwr(PhaseAmplitudeOffset offset, double cwOutputPower)
+        {
+            // Get the currently configured output power
+            double maxOutputPower = cwOutputPower;
+            // Find the max amplitude within the set of Amplitudes.
+            maxOutputPower = Math.Max(maxOutputPower + (double)offset.Amplitude, maxOutputPower);
             return maxOutputPower;
         }
 
@@ -185,6 +208,16 @@ namespace L2CapstoneProject.Beamformer
         private static double DBmtoVrms(double dbmPower)
         {
             return Math.Sqrt((50.0 / 1000.0) * Math.Pow(10.0, dbmPower / 10.0));
+        }
+
+        private void MichaelDemo()
+        {
+            // Do this in a loop
+            ComplexSingle cmplxSng = ComplexSingle.FromPolar(3, 4);
+            int numPoints = 27; // Waveform length in samples
+
+            ComplexSingle[] points = Enumerable.Repeat(cmplxSng, numPoints).ToArray();
+            ComplexWaveform<ComplexSingle> cmplx = ComplexWaveform<ComplexSingle>.FromArray1D(points);
         }
 
         private Tuple<double[], double[]> GenerateIQData(PhaseAmplitudeOffset offset, 
@@ -239,9 +272,26 @@ namespace L2CapstoneProject.Beamformer
             return waveformlist;
         }
 
+        private List<RFWaveform> BuildWaveformList(PhaseAmplitudeOffset offset, int segmentLength)
+        {
+            Tuple<double[], double[]> iqData;
+            // Create list for storing RF waveforms 
+            List<RFWaveform> waveformlist = new List<RFWaveform>();
+            // Setup a waveform object that captures the Amplitude and Phase information,
+            // as well as calculates the coresponding I and Q data arrays.                  
+            RFWaveform waveform = new RFWaveform(FormatWfmName(offset)); // waveform name set based on Amplitude & Phase values.  
+            waveform.AmplitudeOffset = offset.Amplitude;
+            waveform.PhaseOffset = offset.Phase;
+            iqData = GenerateIQData(offset, cwOutputPower, maxOutputPwr, numberOfSamples: segmentLength); // Calucalte IQ data arrays. 
+            waveform.Idata = iqData.Item1;
+            waveform.Qdata = iqData.Item2;
+            waveformlist.Add(waveform); // Add the new waveform object to the waveforms list.
+            return waveformlist;
+        }
+
         private string FormatWfmName(PhaseAmplitudeOffset offset)
         {
-            return $"PHASE{offset.Phase.ToString().Replace(".","p")}AMP{offset.Amplitude.ToString().Replace(".", "p")}";
+            return $"PHASE{offset.Phase.ToString().Replace(".","p").Replace("-", "n")}AMP{offset.Amplitude.ToString().Replace(".", "p").Replace("-", "n")}";
         }
 
         private string BuildScript(List<RFWaveform> waveforms)
@@ -249,9 +299,10 @@ namespace L2CapstoneProject.Beamformer
             StringBuilder script = new StringBuilder();
             script.AppendLine("script myScript");
             script.AppendLine("\trepeat until scriptTrigger0");
+            script.AppendLine("\t\twait 8  marker0(7)");
             foreach (RFWaveform waveform in waveforms)
             {
-                script.AppendLine($"\t\tgenerate {waveform.Name} marker0(4)");
+                script.AppendLine($"\t\tgenerate {waveform.Name}");
             }
             script.AppendLine("\tend repeat");
             script.Append("end script");

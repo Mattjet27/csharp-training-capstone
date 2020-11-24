@@ -29,6 +29,7 @@ namespace L2CapstoneProject
                 offsets[i] = offsetList[i].Amplitude;
             }
 
+            instrSession.SetLOLeakageAvoidanceEnabled("", RFmxInstrMXLOLeakageAvoidanceEnabled.False);
             specAn = instrSession.GetSpecAnSignalConfiguration();
             specAn.SelectMeasurements("", RFmxSpecAnMXMeasurementTypes.Pavt, true);         
 
@@ -36,11 +37,10 @@ namespace L2CapstoneProject
 
             //configure triggering to line up with beamformer output
             specAn.ConfigureDigitalEdgeTrigger("", triggerSource, RFmxSpecAnMXDigitalEdgeTriggerEdge.Rising, 0, true);
-
-            specAn.Pavt.Configuration.ConfigureNumberOfSegments("", NumberOfSegments);
             if (isSteppedBeamformer)
             {
                 specAn.Pavt.Configuration.ConfigureMeasurementLocationType("", RFmxSpecAnMXPavtMeasurementLocationType.Trigger);
+                specAn.Pavt.Configuration.ConfigureMeasurementInterval("", (double)measurementOffset, (double)measurementLength);
             }
             else
             {
@@ -49,10 +49,8 @@ namespace L2CapstoneProject
                   (double)measurementOffset, segmentInterval);
 
             }
-
+            
             specAn.Pavt.Configuration.ConfigureMeasurementBandwidth("", 10.0e6);
-            //specAn.Pavt.Configuration.ConfigureMeasurementInterval("", (double)measurementOffset, (double)measurementLength);
-
         }
 
         //init measurement
