@@ -37,20 +37,24 @@ namespace L2CapstoneProject
                                 double segmentInterval)
         {
             NumberOfSegments = offsetList.Count;
+
+            //determine maximum amplitude offset
             decimal[] offsets = new decimal[NumberOfSegments];
             for (int i = 0; i < NumberOfSegments; i++)
             {
                 offsets[i] = offsetList[i].Amplitude;
             }
 
+            //set instrument/high-level parameters
             instrSession.SetLOLeakageAvoidanceEnabled("", RFmxInstrMXLOLeakageAvoidanceEnabled.False);
             specAn = instrSession.GetSpecAnSignalConfiguration();
-            specAn.SelectMeasurements("", RFmxSpecAnMXMeasurementTypes.Pavt, true);         
-
+            specAn.SelectMeasurements("", RFmxSpecAnMXMeasurementTypes.Pavt, true);  
             specAn.ConfigureRF("", centerFrequency, power+(double)offsets.Max(), 0);
 
             //configure triggering to line up with beamformer output
             specAn.ConfigureDigitalEdgeTrigger("", triggerSource, RFmxSpecAnMXDigitalEdgeTriggerEdge.Rising, 0, true);
+
+            //configure PAvT measurement settings
             if (isSteppedBeamformer)
             {
                 specAn.Pavt.Configuration.ConfigureMeasurementLocationType("", RFmxSpecAnMXPavtMeasurementLocationType.Trigger);
@@ -62,8 +66,7 @@ namespace L2CapstoneProject
                 specAn.Pavt.Configuration.ConfigureMeasurementStartTimeStep("", NumberOfSegments,
                   (double)measurementOffset, segmentInterval);
 
-            }
-            
+            }            
             specAn.Pavt.Configuration.ConfigureMeasurementBandwidth("", 10.0e6);
         }
 
@@ -89,9 +92,10 @@ namespace L2CapstoneProject
             double[] meanAbsolutePhase = new double[NumberOfSegments];                          /* (deg) */
             double[] meanAbsoluteAmplitude = new double[NumberOfSegments];                      /* (dBm) */
 
+            //fetch measurement results
             specAn.Pavt.Results.FetchPhaseAndAmplitudeArray("", timeout, ref meanRelativePhase,
                                         ref meanRelativeAmplitude, ref meanAbsolutePhase, ref meanAbsoluteAmplitude);
-
+            //reformat results 
             for (int i = 0; i < NumberOfSegments; i++)
             {
                 resultList.Add(new PhaseAmplitudeOffset((decimal)meanRelativePhase[i], (decimal)meanRelativeAmplitude[i]));

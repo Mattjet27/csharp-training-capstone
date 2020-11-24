@@ -136,10 +136,12 @@ namespace L2CapstoneProject
             double frequency, power;
             try
             { 
+                //reset UI
                 SetButtonState(true);
                 lsvResults.Items.Clear();
                 errorTextBox.Text = " ";
-                // Initialize sessions
+
+                // Initialize instrument sessions
                 rfsg = new NIRfsg(rfsgNameComboBox.Text, true, false);
                 pavt.InitSession(rfsaNameComboBox.Text);
                 // Subscribe to Rfsg warnings
@@ -208,9 +210,7 @@ namespace L2CapstoneProject
                     }                    
                 }
 
-
-
-                //get results      
+                //gather and display results      
                 List<PhaseAmplitudeOffset> results = pavt.FetchResults();
                 for (int i = 0; i < results.Count; i++)
                 {
