@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace L2CapstoneProject.Beamformer
 {
+    /// <summary>
+    /// This class represents a type that can be used to store and pass RF Waveform data.
+    /// </summary>
     class RFWaveform
     {
         public string Name { get; set; }

@@ -38,6 +38,7 @@ namespace L2CapstoneProject.Beamformer
             // Write inital DUT registers to configure it correctly.
             //throw new NotImplementedException();
         }
+        
 
         public override void Disconnect()
         {
@@ -50,6 +51,10 @@ namespace L2CapstoneProject.Beamformer
             //throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// This method will generate a waveform for the particular offset that is passed in. 
+        /// </summary>
+        /// <param name="offset"></param>
         public override void WriteOffset(PhaseAmplitudeOffset offset)
         {
             // Write any register(s) necessiary to configure the provided Phase and Offset values.
@@ -65,6 +70,11 @@ namespace L2CapstoneProject.Beamformer
             InitiateSequence();
         }
 
+
+        /// <summary>
+        /// This method inititates the RF ouput sequence generation. 
+        /// For simulated purposes, this will abort the already running CW wave generation, just before it starts the new simualted generation.
+        /// </summary>
         public override void InitiateSequence()
         {
             // Stop generation
@@ -106,6 +116,12 @@ namespace L2CapstoneProject.Beamformer
             // Initiate Generation 
             _rfsg.Initiate();
         }
+
+        /// <summary>
+        /// This Method cofigures the output sequence based on a provided list of PhaseAmplitudeOffset objects. 
+        /// </summary>
+        /// <param name="offsets"></param>
+        /// <param name="segmentLength"></param>
         public override void ConfigureSequence(List<PhaseAmplitudeOffset> offsets, int segmentLength)
         {
             base.ConfigureSequence(offsets, segmentLength);
@@ -131,6 +147,9 @@ namespace L2CapstoneProject.Beamformer
         }
         */
 
+        /// <summary>
+        /// This method aborts the sequence generation.
+        /// </summary>
         public override void AbortSequence()
         {
             // Fire software scripttrigger to stop sequence. 
@@ -141,10 +160,9 @@ namespace L2CapstoneProject.Beamformer
                      _rfsg.Triggers.ScriptTriggers[0].SendSoftwareEdgeTrigger();
                 }
             }
-                      
-            // TODO add code to return the RSFG output back to the orignal CW mode?
         }
 
+        // Overide for the ToString() method.
         public override string ToString()
         {
             return "Simualted Beamformer";
@@ -160,7 +178,6 @@ namespace L2CapstoneProject.Beamformer
         /// a seperate method will update the driver session if this value ends up 
         /// being greater than what is currently configured within the driver session.
         /// </returns>
-        /// 
         public double GetMaxOutputPwr(List<PhaseAmplitudeOffset> offsets, double cwOutputPower)
         {
             // Get the currently configured output power
@@ -173,6 +190,15 @@ namespace L2CapstoneProject.Beamformer
             return maxOutputPower;
         }
 
+        /// <summary>
+        /// The is method calculates the max output power required to generate the all the provided offset amplitudes. 
+        /// </summary>
+        /// <param name="offsets"></param>
+        /// <returns>The max output power that the RFSG driver needs to be configured to,
+        /// based on the provided list of offset amplitudes.
+        /// a seperate method will update the driver session if this value ends up 
+        /// being greater than what is currently configured within the driver session.
+        /// </returns>
         public double GetMaxOutputPwr(PhaseAmplitudeOffset offset, double cwOutputPower)
         {
             // Get the currently configured output power
@@ -199,6 +225,13 @@ namespace L2CapstoneProject.Beamformer
             }
         }
 
+        /// <summary>
+        /// This method will calculate the magnitude/radius of the point to generate in polar cordinates. 
+        /// </summary>
+        /// <param name="cwOutputPower"></param>
+        /// <param name="maxOutputPwr"></param>
+        /// <param name="amplitudeOffset"></param>
+        /// <returns>The magnitude/radius of the point to generate in polar cordinates</returns>
         internal static double CalculateRadius(double cwOutputPower, double maxOutputPwr, double amplitudeOffset)
         {
             double radius = (DBmtoVrms(cwOutputPower + amplitudeOffset)) / DBmtoVrms(maxOutputPwr);
@@ -210,6 +243,8 @@ namespace L2CapstoneProject.Beamformer
             return Math.Sqrt((50.0 / 1000.0) * Math.Pow(10.0, dbmPower / 10.0));
         }
 
+        /*
+        // Example code from Michael for an altrent measn fo generating the RFSG waveform data
         private void MichaelDemo()
         {
             // Do this in a loop
@@ -219,7 +254,16 @@ namespace L2CapstoneProject.Beamformer
             ComplexSingle[] points = Enumerable.Repeat(cmplxSng, numPoints).ToArray();
             ComplexWaveform<ComplexSingle> cmplx = ComplexWaveform<ComplexSingle>.FromArray1D(points);
         }
+        */
 
+        /// <summary>
+        /// This method caclulates the I and Q data points for the RFSG waveform.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="cwOutputPower"></param>
+        /// <param name="maxOutputPwr"></param>
+        /// <param name="numberOfSamples"></param>
+        /// <returns>A Tuple of I and Q data points.</returns>
         private Tuple<double[], double[]> GenerateIQData(PhaseAmplitudeOffset offset, 
             double cwOutputPower, double maxOutputPwr, int numberOfSamples=64)
         {
@@ -252,6 +296,12 @@ namespace L2CapstoneProject.Beamformer
             return Tuple.Create(iData, qData);
         }
 
+        /// <summary>
+        /// This method builds a List of RF Waveform objects, which will be later loaded in by the RFSG driver session.
+        /// </summary>
+        /// <param name="offsets"></param>
+        /// <param name="segmentLength"></param>
+        /// <returns>A List of RFWaveform type objects</returns>
         private List<RFWaveform> BuildWaveformList(List<PhaseAmplitudeOffset> offsets, int segmentLength)
         {
             Tuple<double[], double[]> iqData;
@@ -272,6 +322,12 @@ namespace L2CapstoneProject.Beamformer
             return waveformlist;
         }
 
+        /// <summary>
+        /// This method builds a List of RF Waveform objects, which will be later loaded in by the RFSG driver session.
+        /// </summary>
+        /// <param name="offsets"></param>
+        /// <param name="segmentLength"></param>
+        /// <returns>A List of RFWaveform type objects</returns>
         private List<RFWaveform> BuildWaveformList(PhaseAmplitudeOffset offset, int segmentLength)
         {
             Tuple<double[], double[]> iqData;
@@ -289,11 +345,21 @@ namespace L2CapstoneProject.Beamformer
             return waveformlist;
         }
 
+        /// <summary>
+        /// This method formats the unique name to use for the RFWaveform object when it is first being created. 
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <returns>A String to use as the name for the RFWaveform object</returns>
         private string FormatWfmName(PhaseAmplitudeOffset offset)
         {
             return $"PHASE{offset.Phase.ToString().Replace(".","p").Replace("-", "n")}AMP{offset.Amplitude.ToString().Replace(".", "p").Replace("-", "n")}";
         }
 
+        /// <summary>
+        /// This method builds a script that will be pass to the RFSG driver sessions to generate the RF waveforms. 
+        /// </summary>
+        /// <param name="waveforms"></param>
+        /// <returns>A string the represents the script to be loaded by the RFSG driver sessions.</returns>
         private string BuildScript(List<RFWaveform> waveforms)
         {
             StringBuilder script = new StringBuilder();
